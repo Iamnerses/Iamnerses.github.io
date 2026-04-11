@@ -1,6 +1,6 @@
 {
   "meta": {
-    "name": "Nerses",
+    "name": "Nesa",
     "tagline": "Developer · Creator · Builder",
     "bio": "Passionate developer building games, apps, and web experiences. Always learning, always shipping.",
     "avatar": "",
@@ -23,7 +23,10 @@
       "excerpt": "This is where I share what I'm building, learning, and thinking about.",
       "content": "# Welcome!\n\nThis site is where I document my journey as a developer and creator. Expect posts about game dev, web projects, mobile apps, and whatever rabbit hole I've fallen into this week.\n\nStay tuned — things are just getting started. 🚀",
       "cover": "",
-      "tags": ["intro", "hello"],
+      "tags": [
+        "intro",
+        "hello"
+      ],
       "date": "2026-04-11",
       "published": true
     }
@@ -33,7 +36,11 @@
       "id": "bardle-web",
       "title": "Bardle",
       "description": "A Wordle-inspired word game supporting both English and Armenian (Հայերեն). Guess the 5-letter word in 6 tries.",
-      "tech": ["JavaScript", "HTML", "CSS"],
+      "tech": [
+        "JavaScript",
+        "HTML",
+        "CSS"
+      ],
       "url": "https://iamnerses.github.io/Bardle/",
       "repoUrl": "https://github.com/Iamnerses/Bardle",
       "icon": "🎯",
@@ -48,7 +55,10 @@
       "title": "Bardle",
       "description": "A bilingual Wordle clone for English and Armenian. Test your vocabulary in two languages — 5 letters, 6 guesses, infinite fun.",
       "cover": "",
-      "genre": ["Word Game", "Puzzle"],
+      "genre": [
+        "Word Game",
+        "Puzzle"
+      ],
       "url": "https://iamnerses.github.io/Bardle/",
       "repoUrl": "https://github.com/Iamnerses/Bardle",
       "players": "1 player",
@@ -60,7 +70,11 @@
       "title": "Broken Phone",
       "description": "A digital take on the classic Telephone game. Pass messages through a chain of players and watch the chaos unfold.",
       "cover": "",
-      "genre": ["Casual", "Multiplayer", "Party"],
+      "genre": [
+        "Casual",
+        "Multiplayer",
+        "Party"
+      ],
       "url": "https://iamnerses.github.io/Broken-Phone-game/",
       "repoUrl": "https://github.com/Iamnerses/Broken-Phone-game",
       "players": "Multiplayer",
@@ -69,11 +83,26 @@
     }
   ],
   "skills": [
-    { "name": "JavaScript", "level": 90 },
-    { "name": "HTML / CSS", "level": 95 },
-    { "name": "Game Development", "level": 75 },
-    { "name": "Mobile Dev", "level": 65 },
-    { "name": "Python", "level": 70 }
+    {
+      "name": "JavaScript",
+      "level": 90
+    },
+    {
+      "name": "HTML / CSS",
+      "level": 95
+    },
+    {
+      "name": "Game Development",
+      "level": 75
+    },
+    {
+      "name": "Mobile Dev",
+      "level": 65
+    },
+    {
+      "name": "Python",
+      "level": 70
+    }
   ],
   "experience": [
     {
