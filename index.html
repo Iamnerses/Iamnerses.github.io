@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nerses | Portfolio</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Marked for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+<header>
+    <nav>
+        <div style="font-family: var(--font-heading); font-weight: bold; font-size: 1.2rem;">NERSES</div>
+        <div class="nav-links">
+            <a href="#blog">Blog</a>
+            <a href="#programs">Programs</a>
+            <a href="#apps">Apps</a>
+            <a href="#games">Games</a>
+            <select class="theme-switch" id="theme-switch">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+                <option value="cyberpunk">Cyberpunk</option>
+            </select>
+        </div>
+    </nav>
+</header>
+
+<div class="hero">
+    <img id="profile-avatar" src="" alt="Avatar" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-bottom: 2rem; border: 4px solid var(--accent); display: none;">
+    <h1 id="profile-name">Loading...</h1>
+    <p id="profile-tagline" style="font-size: 1.5rem; color: var(--text-muted); margin-bottom: 2rem;"></p>
+    <p id="profile-bio" style="max-width: 600px; margin: 0 auto 2rem; color: var(--text-muted);"></p>
+    
+    <div id="social-links" style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem;">
+        <!-- Injected via JS -->
+    </div>
+</div>
+
+<main>
+    <section id="blog">
+        <h2>Latest Thoughts</h2>
+        <div class="grid" id="blog-grid"></div>
+    </section>
+
+    <section id="games">
+        <h2>Games Catalogue</h2>
+        <div class="grid" id="games-grid"></div>
+    </section>
+
+    <section id="programs">
+        <h2>Web Programs</h2>
+        <div class="grid" id="programs-grid"></div>
+    </section>
+
+    <section id="apps">
+        <h2>Mobile Apps</h2>
+        <div class="grid" id="apps-grid"></div>
+    </section>
+</main>
+
+<!-- Modal Overlay -->
+<div class="modal-overlay" id="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeModal()">×</button>
+        <div id="modal-body"></div>
+    </div>
+</div>
+
+<script>
+    let siteData = {};
+
+    // Theme logic
+    const themeSelect = document.getElementById('theme-switch');
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    themeSelect.value = savedTheme;
+
+    themeSelect.addEventListener('change', (e) => {
+        const t = e.target.value;
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('theme', t);
+    });
+
+    // Fetch data and render
+    fetch('data.json')
+        .then(res => res.json())
+        .then(data => {
+            siteData = data;
+            renderProfile(data.meta);
+            renderBlog(data.blog);
+            renderGames(data.games);
+            renderPrograms(data.programs);
+            renderApps(data.apps);
+        })
+        .catch(err => console.error("Error loading data.json", err));
+
+    function renderProfile(meta) {
+        document.getElementById('profile-name').innerText = meta.name;
+        document.getElementById('profile-tagline').innerText = meta.tagline;
+        document.getElementById('profile-bio').innerText = meta.bio;
+        
+        if (meta.avatar) {
+            const img = document.getElementById('profile-avatar');
+            img.src = meta.avatar;
+            img.style.display = 'block';
+        }
+
+        const socialsUrl = meta.socials;
+        const socialDiv = document.getElementById('social-links');
+        socialDiv.innerHTML = '';
+        for (let [platform, url] of Object.entries(socialsUrl)) {
+            if (url) {
+                socialDiv.innerHTML += `<a href="${url}" target="_blank" class="btn" style="background: transparent; border: 1px solid var(--border);">${platform}</a>`;
+            }
+        }
+    }
+
+    function renderBlog(posts) {
+        const grid = document.getElementById('blog-grid');
+        grid.innerHTML = posts.filter(p => p.published).map(post => `
+            <div class="card" onclick="openBlog('${post.id}')">
+                ${post.cover ? `<img src="${post.cover}" class="blog-cover" alt="Cover">` : `<div class="blog-cover" style="display:flex; justify-content:center; align-items:center;">📰</div>`}
+                <h3>${post.title}</h3>
+                <div class="tags">
+                    ${post.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+                </div>
+                <p>${post.excerpt}</p>
+                <small style="color: var(--text-muted)">${post.date}</small>
+            </div>
+        `).join('');
+    }
+
+    function renderGames(games) {
+        const grid = document.getElementById('games-grid');
+        grid.innerHTML = games.map(game => `
+            <div class="card" onclick="openGame('${game.url}', '${game.title}')">
+                <h3>${game.title}</h3>
+                <div class="tags">
+                    ${game.genre.map(t => `<span class="tag">${t}</span>`).join('')}
+                </div>
+                <p>${game.description}</p>
+                <span class="btn" style="margin-top:auto;">Play Now</span>
+            </div>
+        `).join('');
+    }
+
+    function renderPrograms(programs) {
+        const grid = document.getElementById('programs-grid');
+        grid.innerHTML = programs.map(prog => `
+            <div class="card">
+                <h3>${prog.icon || ''} ${prog.title}</h3>
+                <div class="tags">
+                    ${prog.tech.map(t => `<span class="tag">${t}</span>`).join('')}
+                </div>
+                <p>${prog.description}</p>
+                <div style="display: flex; gap: 1rem; margin-top: auto;">
+                    ${prog.embed 
+                        ? `<button class="btn" onclick="openGame('${prog.url}', '${prog.title}')">Open</button>`
+                        : `<a href="${prog.url}" target="_blank" class="btn">Open</a>`
+                    }
+                    ${prog.repoUrl ? `<a href="${prog.repoUrl}" target="_blank" class="btn" style="background: transparent; border: 1px solid var(--border);">GitHub</a>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderApps(apps) {
+        const grid = document.getElementById('apps-grid');
+        if (!apps || apps.length === 0) {
+            grid.innerHTML = `<p style="color: var(--text-muted)">No apps listed yet.</p>`;
+            return;
+        }
+        grid.innerHTML = apps.map(app => `
+            <div class="card">
+                <h3>${app.title}</h3>
+                <p>${app.description}</p>
+                <a href="${app.url}" target="_blank" class="btn" style="margin-top: auto;">Download</a>
+            </div>
+        `).join('');
+    }
+
+    /* Modal Logic */
+    const modal = document.getElementById('modal');
+    const modalBody = document.getElementById('modal-body');
+
+    function openBlog(id) {
+        const post = siteData.blog.find(p => p.id === id);
+        if (!post) return;
+        
+        modalBody.innerHTML = `
+            ${post.cover ? `<img src="${post.cover}" style="width:100%; border-radius:8px; margin-bottom: 2rem;">` : ''}
+            <div class="markdown-body">
+                ${marked.parse(post.content)}
+            </div>
+        `;
+        modal.classList.add('active');
+    }
+
+    function openGame(url, title) {
+        modalBody.innerHTML = `
+            <h2 style="margin-bottom: 1rem;">${title}</h2>
+            <iframe src="${url}" class="iframe-container" allow="fullscreen"></iframe>
+            <div style="margin-top: 1rem; text-align: right;">
+                <a href="${url}" target="_blank" style="color: var(--accent);">Open in new tab ↗</a>
+            </div>
+        `;
+        modal.classList.add('active');
+    }
+
+    function closeModal() {
+        modal.classList.remove('active');
+        setTimeout(() => { modalBody.innerHTML = ''; }, 300); // clear iframe
+    }
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+</script>
+
+</body>
+</html>

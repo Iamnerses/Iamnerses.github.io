@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="login-section" class="login-screen">
+    <div class="login-box">
+        <h2 style="margin-bottom: 1rem;">Admin Access</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Enter password to edit content</p>
+        <input type="password" id="password-input" placeholder="Password" style="width:100%; padding: 0.75rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+        <button class="btn" style="width: 100%;" onclick="login()">Login</button>
+        <p id="login-error" style="color: #ef4444; margin-top: 1rem; display: none;">Incorrect password</p>
+    </div>
+</div>
+
+<!-- Edit Panel (Hidden by default) -->
+<div id="edit-section" class="edit-container" style="display: none;">
+    <div class="edit-sidebar">
+        <h2 style="font-family: var(--font-heading); margin-bottom: 2rem;">Dashboard</h2>
+        <button class="active" onclick="switchTab('profile')">Profile & Meta</button>
+        <button onclick="switchTab('blog')">Blog Posts</button>
+        <button onclick="switchTab('games')">Games</button>
+        <button onclick="switchTab('programs')">Programs</button>
+        <button onclick="switchTab('apps')">Apps</button>
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0;">
+        <button onclick="saveData()" style="background: var(--accent); color: white;">Export data.json</button>
+    </div>
+
+    <div class="edit-content-area" id="content-area">
+        <!-- Dynamic Content Injected Here -->
+    </div>
+</div>
+
+<script>
+    let siteData = {};
+
+    // SHA-256 Hashing helper
+    async function sha256(message) {
+        const msgBuffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Load setup
+    async function init() {
+        try {
+            const res = await fetch('data.json');
+            siteData = await res.json();
+            
+            // Check session
+            if (sessionStorage.getItem('auth') === 'true') {
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('edit-section').style.display = 'flex';
+                switchTab('profile');
+            }
+        } catch (e) {
+            console.error("Could not load data.json", e);
+            document.getElementById('login-section').innerHTML = '<div class="login-box"><h2>Error</h2><p>Cannot find data.json. Ensure you are running on a local server or GitHub pages.</p></div>';
+        }
+    }
+
+    async function login() {
+        const input = document.getElementById('password-input').value;
+        const hash = await sha256(input);
+        
+        if (hash === siteData.auth.passwordHash) {
+            sessionStorage.setItem('auth', 'true');
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('edit-section').style.display = 'flex';
+            switchTab('profile');
+        } else {
+            document.getElementById('login-error').style.display = 'block';
+        }
+    }
+
+    function switchTab(tab) {
+        // Update active class
+        document.querySelectorAll('.edit-sidebar button').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+
+        const area = document.getElementById('content-area');
+        
+        if (tab === 'profile') {
+            area.innerHTML = `
+                <h2>Profile Settings</h2>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="meta-name" value="${siteData.meta.name}">
+                </div>
+                <div class="form-group">
+                    <label>Tagline</label>
+                    <input type="text" id="meta-tagline" value="${siteData.meta.tagline}">
+                </div>
+                <div class="form-group">
+                    <label>Bio</label>
+                    <textarea id="meta-bio" rows="4">${siteData.meta.bio}</textarea>
+                </div>
+                <button class="btn" onclick="saveProfile()">Apply Changes</button>
+            `;
+        } else if (['games', 'programs', 'apps', 'blog'].includes(tab)) {
+            renderList(tab, area);
+        }
+    }
+
+    function saveProfile() {
+        siteData.meta.name = document.getElementById('meta-name').value;
+        siteData.meta.tagline = document.getElementById('meta-tagline').value;
+        siteData.meta.bio = document.getElementById('meta-bio').value;
+        alert("Profile applied to memory. Export data.json to save permanently.");
+    }
+
+    function renderList(type, area) {
+        const items = siteData[type];
+        let html = `<h2>Manage ${type.charAt(0).toUpperCase() + type.slice(1)}</h2>
+                    <button class="btn" onclick="editItem('${type}', null)" style="margin-bottom:2rem;">+ Add New</button>
+                    <div class="grid">`;
+        
+        items.forEach((item, index) => {
+            html += `<div class="card" style="padding: 1rem;">
+                        <h3>${item.title || item.name}</h3>
+                        <p style="margin-bottom:1rem; font-size:0.8rem;">${item.description || item.excerpt || ''}</p>
+                        <div style="display:flex; gap:0.5rem; margin-top:auto;">
+                            <button class="btn" style="padding:0.5rem 1rem; font-size:0.8rem;" onclick="editItem('${type}', ${index})">Edit</button>
+                            <button class="btn" style="padding:0.5rem 1rem; font-size:0.8rem; background:#ef4444;" onclick="deleteItem('${type}', ${index})">Delete</button>
+                        </div>
+                     </div>`;
+        });
+        html += `</div>`;
+        area.innerHTML = html;
+    }
+
+    function deleteItem(type, index) {
+        if(confirm('Are you sure you want to delete this?')) {
+            siteData[type].splice(index, 1);
+            renderList(type, document.getElementById('content-area'));
+        }
+    }
+
+    function editItem(type, index) {
+        const area = document.getElementById('content-area');
+        const isNew = index === null;
+        const item = isNew ? {} : siteData[type][index];
+        
+        if (type === 'games' || type === 'programs') {
+            area.innerHTML = `
+                <h2>${isNew ? 'Add' : 'Edit'} ${type}</h2>
+                <div class="form-group"><label>Title</label><input type="text" id="edit-title" value="${item.title || ''}"></div>
+                <div class="form-group"><label>Description</label><textarea id="edit-desc">${item.description || ''}</textarea></div>
+                <div class="form-group"><label>App / iframe URL (e.g., https://username.github.io/game)</label><input type="text" id="edit-url" value="${item.url || ''}"></div>
+                <div class="form-group"><label>GitHub Repo URL</label><input type="text" id="edit-repo" value="${item.repoUrl || ''}"></div>
+                <button class="btn" onclick="saveItem('${type}', ${index})">Save to Memory</button>
+                <button class="btn" style="background:transparent; border:1px solid var(--border);" onclick="switchTab('${type}')">Cancel</button>
+            `;
+        } else if (type === 'blog') {
+            area.innerHTML = `
+                <h2>${isNew ? 'Add' : 'Edit'} Blog Post</h2>
+                <div class="form-group"><label>Title</label><input type="text" id="edit-title" value="${item.title || ''}"></div>
+                <div class="form-group"><label>Excerpt</label><input type="text" id="edit-desc" value="${item.excerpt || ''}"></div>
+                <div class="form-group"><label>Markdown Content</label><textarea id="edit-content" rows="10">${item.content || ''}</textarea></div>
+                <button class="btn" onclick="saveItem('${type}', ${index})">Save to Memory</button>
+                <button class="btn" style="background:transparent; border:1px solid var(--border);" onclick="switchTab('${type}')">Cancel</button>
+            `;
+        }
+    }
+
+    function saveItem(type, index) {
+        const isNew = index === null;
+        const item = isNew ? {} : siteData[type][index];
+
+        item.title = document.getElementById('edit-title').value;
+        const descEl = document.getElementById('edit-desc');
+        if(descEl) item[type === 'blog' ? 'excerpt' : 'description'] = descEl.value;
+        
+        const urlEl = document.getElementById('edit-url');
+        if(urlEl) item.url = urlEl.value;
+
+        const repoEl = document.getElementById('edit-repo');
+        if(repoEl) item.repoUrl = repoEl.value;
+
+        const contentEl = document.getElementById('edit-content');
+        if(contentEl) item.content = contentEl.value;
+
+        if (isNew) {
+            item.id = item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            if(type==='games') item.genre = [];
+            if(type==='programs') item.tech = [];
+            if(type==='blog') { item.tags = []; item.date = new Date().toISOString().split('T')[0]; item.published = true;}
+            siteData[type].push(item);
+        }
+
+        switchTab(type);
+    }
+
+    // Export functionality
+    function saveData() {
+        const dataStr = JSON.stringify(siteData, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'data.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert("data.json downloaded! Commit and push this file to your GitHub repo to publish changes.");
+    }
+
+    init();
+</script>
+
+</body>
+</html>
